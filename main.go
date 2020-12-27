@@ -8,7 +8,7 @@ import (
 )
 
 // DX is width
-var DX = 80
+var DX = 100
 
 // DY is height
 var DY = 40
