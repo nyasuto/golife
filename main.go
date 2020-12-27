@@ -99,7 +99,7 @@ func step(data [][]int) [][]int {
 	return result
 }
 
-func flush(data [][]int) {
+func flush(data [][]int) error {
 	for y := 0; y < DY; y++ {
 		for x := 0; x < DX; x++ {
 			var dot = ' '
@@ -111,7 +111,7 @@ func flush(data [][]int) {
 		}
 	}
 
-	termbox.Flush()
+	return termbox.Flush()
 
 }
 
@@ -122,11 +122,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	err = termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	if err != nil {
+		panic(err)
+	}
 
 	for i := 0; i < 300; i++ {
 		matrix = step(matrix)
-		flush(matrix)
+		err = flush(matrix)
+		if err != nil {
+			panic(err)
+		}
+
 		time.Sleep(200 * time.Millisecond)
 	}
 
