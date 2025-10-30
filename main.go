@@ -27,75 +27,55 @@ func randomize() [][]int {
 	return result
 }
 
-func step(data [][]int) [][]int {
+// countNeighbors counts the number of alive neighbors around a cell
+func countNeighbors(data [][]int, x, y int) int {
+	count := 0
 
+	// Check all 8 directions around the cell
+	for dy := -1; dy <= 1; dy++ {
+		for dx := -1; dx <= 1; dx++ {
+			// Skip the center cell itself
+			if dx == 0 && dy == 0 {
+				continue
+			}
+
+			// Calculate neighbor coordinates
+			nx := x + dx
+			ny := y + dy
+
+			// Check boundaries
+			if nx >= 0 && nx < DX && ny >= 0 && ny < DY {
+				count += data[ny][nx]
+			}
+		}
+	}
+
+	return count
+}
+
+func step(data [][]int) [][]int {
 	result := make([][]int, DY)
 
 	for y := 0; y < DY; y++ {
 		result[y] = make([]int, DX)
 		for x := 0; x < DX; x++ {
-			if data[y][x] == 1 {
-				//生命がいるところは、周囲に２個、または３個の生命がいる場合に、そのまま生命が残ります。 そうでない場合には死んでしまいます。
-				var check int
-				if x == 0 && y == 0 {
-					check = data[y][x+1] + data[y+1][x] + data[y+1][x+1]
-				} else if x == DX-1 && y == DY-1 {
-					check = data[y-1][x-1] + data[y-1][x] + data[y][x-1]
-				} else if y == 0 && x == DX-1 {
-					check = data[y][x-1] + data[y+1][x-1] + data[y+1][x]
-				} else if x == 0 && y == DY-1 {
-					check = data[y-1][x] + data[y-1][x+1] + data[y][x+1]
-				} else if y == 0 {
-					check = data[y][x-1] + data[y][x+1] + data[y+1][x-1] + data[y+1][x] + data[y+1][x+1]
-				} else if y == DY-1 {
-					check = data[y-1][x-1] + data[y-1][x] + data[y-1][x+1] + data[y][x-1] + data[y][x+1]
-				} else if x == 0 {
-					check = data[y-1][x] + data[y-1][x+1] + data[y][x+1] + data[y+1][x] + data[y+1][x+1]
-				} else if x == DX-1 {
-					check = data[y-1][x-1] + data[y-1][x] + data[y][x-1] + data[y+1][x-1] + data[y+1][x]
-				} else {
-					check = data[y-1][x-1] + data[y-1][x] + data[y-1][x+1] + data[y][x-1] + data[y][x+1] + data[y+1][x-1] + data[y+1][x] + data[y+1][x+1]
-				}
+			neighbors := countNeighbors(data, x, y)
+			isAlive := data[y][x] == 1
 
-				if check == 2 || check == 3 {
-					result[y][x] = 1
-				} else {
-					result[y][x] = 0
-				}
-
+			// Conway's Game of Life rules:
+			// 1. Any live cell with 2 or 3 live neighbors survives
+			// 2. Any dead cell with exactly 3 live neighbors becomes alive
+			// 3. All other cells die or stay dead
+			if isAlive && (neighbors == 2 || neighbors == 3) {
+				result[y][x] = 1
+			} else if !isAlive && neighbors == 3 {
+				result[y][x] = 1
 			} else {
-				//生命のいないところには周囲にちょうど３個の生命がある場合に新しく生命が誕生します。
-				var check int
-				if x == 0 && y == 0 {
-					check = data[y][x+1] + data[y+1][x] + data[y+1][x+1]
-				} else if x == DX-1 && y == DY-1 {
-					check = data[y-1][x-1] + data[y-1][x] + data[y][x-1]
-				} else if y == 0 && x == DX-1 {
-					check = data[y][x-1] + data[y+1][x-1] + data[y+1][x]
-				} else if x == 0 && y == DY-1 {
-					check = data[y-1][x] + data[y-1][x+1] + data[y][x+1]
-				} else if y == 0 {
-					check = data[y][x-1] + data[y][x+1] + data[y+1][x-1] + data[y+1][x] + data[y+1][x+1]
-				} else if y == DY-1 {
-					check = data[y-1][x-1] + data[y-1][x] + data[y-1][x+1] + data[y][x-1] + data[y][x+1]
-				} else if x == 0 {
-					check = data[y-1][x] + data[y-1][x+1] + data[y][x+1] + data[y+1][x] + data[y+1][x+1]
-				} else if x == DX-1 {
-					check = data[y-1][x-1] + data[y-1][x] + data[y][x-1] + data[y+1][x-1] + data[y+1][x]
-				} else {
-					check = data[y-1][x-1] + data[y-1][x] + data[y-1][x+1] + data[y][x-1] + data[y][x+1] + data[y+1][x-1] + data[y+1][x] + data[y+1][x+1]
-				}
-
-				if check == 3 {
-					result[y][x] = 1
-				} else {
-					result[y][x] = 0
-				}
+				result[y][x] = 0
 			}
-			//result[y][x] = r.Intn(2)
-
 		}
 	}
+
 	return result
 }
 
