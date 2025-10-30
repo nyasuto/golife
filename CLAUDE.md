@@ -3,11 +3,30 @@
 ## Project Overview
 
 Conway's Game of Life implementation in Go with:
+
 - Terminal UI using termbox-go
 - Configurable grid size, speed, and generation count
 - Famous pattern presets (Glider, Pulsar, Gosper's Glider Gun, etc.)
 - 72.4% test coverage
 - CI/CD pipeline with automated testing and quality checks
+
+## Issue 実装フロー
+
+Issue を実装する前に、以下を評価して判断すること：
+
+### 複雑度チェック（各項目 Yes=1 点）
+
+- [ ] 新しい技術/ライブラリが必要
+- [ ] 3 つ以上の機能に影響する
+- [ ] DB 設計の変更を含む
+- [ ] 認証/支払い/個人情報を扱う
+- [ ] パフォーマンスがクリティカル
+
+### 自動判定
+
+- **3 点以上**: 設計書を先に提示 → 承認待ち
+- **1-2 点**: 実装方針（3 行）を示して即実装
+- **0 点**: 何も言わずに即実装
 
 ## 🚨 CRITICAL: PR Merge Policy
 
@@ -24,18 +43,18 @@ Conway's Game of Life implementation in Go with:
 
 ## Git Workflow
 
-### mainブランチへの直接コミット禁止
+### main ブランチへの直接コミット禁止
 
-- ❌ mainブランチへの直接コミットは禁止
-- ✅ 全ての変更はfeatureブランチから開始
-- ✅ Pull Requestを経由してマージ
+- ❌ main ブランチへの直接コミットは禁止
+- ✅ 全ての変更は feature ブランチから開始
+- ✅ Pull Request を経由してマージ
 
 ### ブランチ命名規則
 
 - `feat/X-description` - 新機能
 - `fix/X-description` - バグ修正
 - `docs/X-description` - ドキュメント
-- `ci/X-description` - CI/CD設定
+- `ci/X-description` - CI/CD 設定
 - `refactor/X-description` - リファクタリング
 
 ### 開発フロー
@@ -64,57 +83,6 @@ gh pr checks --watch
 
 # 8. ⚠️ 人間によるレビューとマージを待つ
 ```
-
-## Implemented Features
-
-### ✅ Completed Issues
-
-1. **Issue #10: Makefile** (PR #20)
-   - Comprehensive build system with quality checks
-   - Targets: build, test, coverage, quality, clean, run
-
-2. **Issue #11: Unit Tests** (PR #22)
-   - 72.4% test coverage
-   - 6 test suites, 15 subtests
-   - Tests for randomize(), step(), edge cases, known patterns
-
-3. **Issue #12: CI/CD Pipeline** (PR #23)
-   - Multi-job workflow: Lint, Test, Build, Quality Checks
-   - Codecov integration
-   - Go 1.25 support
-
-4. **Issue #13: Code Refactoring** (PR #30)
-   - Extracted countNeighbors() helper function
-   - Reduced step() from 70 lines to 24 lines (66% reduction)
-   - Improved code readability
-
-5. **Issue #14: Configurable Parameters** (PR #31)
-   - Command-line flags: --width, --height, --speed, --generations
-   - Input validation
-   - Default values with constants
-
-6. **Issue #16: Pattern Presets** (PR #32)
-   - 6 famous patterns: glider, blinker, toad, beacon, pulsar, glider-gun
-   - Pattern loading with center alignment
-   - --pattern flag with 'list' option
-
-### 🔄 Pending Issues
-
-7. **Issue #15: Interactive Mode**
-   - Keyboard controls for pause/resume, step, speed adjustment
-   - Priority: medium
-
-8. **Issue #17: File I/O**
-   - Save/load grid state to files
-   - Priority: low
-
-9. **Issue #18: Statistics Display**
-   - Show generation count, alive cells, population changes
-   - Priority: low
-
-10. **Issue #19: Colorful Display**
-    - Color cells based on age
-    - Priority: low
 
 ## Technical Stack
 
