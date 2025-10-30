@@ -1,17 +1,35 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"math/rand"
 	"time"
 
 	termbox "github.com/nsf/termbox-go"
 )
 
+// Default values
+const (
+	defaultWidth       = 100
+	defaultHeight      = 40
+	defaultSpeed       = 200
+	defaultGenerations = 300
+)
+
+// Configuration variables
+var (
+	width       int
+	height      int
+	speed       int
+	generations int
+)
+
 // DX is width
-var DX = 100
+var DX = defaultWidth
 
 // DY is height
-var DY = 40
+var DY = defaultHeight
 
 func randomize() [][]int {
 	result := make([][]int, DY)
@@ -95,27 +113,57 @@ func flush(data [][]int) error {
 
 }
 
+func init() {
+	flag.IntVar(&width, "width", defaultWidth, "Grid width")
+	flag.IntVar(&height, "height", defaultHeight, "Grid height")
+	flag.IntVar(&speed, "speed", defaultSpeed, "Animation speed in milliseconds")
+	flag.IntVar(&generations, "generations", defaultGenerations, "Number of generations to simulate")
+}
+
 func main() {
+	flag.Parse()
+
+	// Validate parameters
+	if width <= 0 || height <= 0 {
+		fmt.Println("Error: width and height must be positive integers")
+		flag.Usage()
+		return
+	}
+	if speed <= 0 {
+		fmt.Println("Error: speed must be a positive integer")
+		flag.Usage()
+		return
+	}
+	if generations <= 0 {
+		fmt.Println("Error: generations must be a positive integer")
+		flag.Usage()
+		return
+	}
+
+	// Update global dimensions
+	DX = width
+	DY = height
+
 	var matrix = randomize()
 
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
 	}
+	defer termbox.Close()
+
 	err = termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	if err != nil {
 		panic(err)
 	}
 
-	for i := 0; i < 300; i++ {
+	for i := 0; i < generations; i++ {
 		matrix = step(matrix)
 		err = flush(matrix)
 		if err != nil {
 			panic(err)
 		}
 
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(time.Duration(speed) * time.Millisecond)
 	}
-
-	defer termbox.Close()
 }
