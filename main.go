@@ -25,6 +25,7 @@ var (
 	generations int
 	pattern     string
 	showStats   bool
+	colorMode   string
 )
 
 // Statistics holds simulation statistics
@@ -287,6 +288,50 @@ func step(data [][]int) [][]int {
 	return result
 }
 
+// stepWithAge updates the grid and age map
+func stepWithAge(data [][]int, ageMap [][]int) ([][]int, [][]int) {
+	result := make([][]int, DY)
+	newAgeMap := make([][]int, DY)
+
+	for y := 0; y < DY; y++ {
+		result[y] = make([]int, DX)
+		newAgeMap[y] = make([]int, DX)
+		for x := 0; x < DX; x++ {
+			neighbors := countNeighbors(data, x, y)
+			isAlive := data[y][x] == 1
+
+			// Conway's Game of Life rules
+			if isAlive && (neighbors == 2 || neighbors == 3) {
+				result[y][x] = 1
+				newAgeMap[y][x] = ageMap[y][x] + 1 // Increment age
+			} else if !isAlive && neighbors == 3 {
+				result[y][x] = 1
+				newAgeMap[y][x] = 1 // Born with age 1
+			} else {
+				result[y][x] = 0
+				newAgeMap[y][x] = 0 // Dead cells have age 0
+			}
+		}
+	}
+
+	return result, newAgeMap
+}
+
+// getColorByAge returns the color based on cell age
+func getColorByAge(age int) termbox.Attribute {
+	if age == 0 {
+		return termbox.ColorDefault
+	} else if age == 1 {
+		return termbox.ColorGreen // Newborn
+	} else if age <= 3 {
+		return termbox.ColorYellow // Young
+	} else if age <= 10 {
+		return termbox.ColorRed // Old
+	} else {
+		return termbox.ColorBlue // Very old
+	}
+}
+
 func flush(data [][]int) error {
 	for y := 0; y < DY; y++ {
 		for x := 0; x < DX; x++ {
@@ -301,6 +346,28 @@ func flush(data [][]int) error {
 
 	return termbox.Flush()
 
+}
+
+// flushWithColor renders the grid with age-based colors
+func flushWithColor(data [][]int, ageMap [][]int) error {
+	for y := 0; y < DY; y++ {
+		for x := 0; x < DX; x++ {
+			var dot = ' '
+			color := termbox.ColorDefault
+
+			if data[y][x] == 1 {
+				dot = '*'
+				if colorMode == "age" {
+					color = getColorByAge(ageMap[y][x])
+				} else {
+					color = termbox.ColorDefault
+				}
+			}
+			termbox.SetCell(x, y, dot, color, termbox.ColorDefault)
+		}
+	}
+
+	return termbox.Flush()
 }
 
 // displayStatistics displays statistics on the screen
@@ -342,6 +409,7 @@ func init() {
 	flag.IntVar(&generations, "generations", defaultGenerations, "Number of generations to simulate")
 	flag.StringVar(&pattern, "pattern", "", "Pattern to load (use 'list' to see available patterns)")
 	flag.BoolVar(&showStats, "stats", false, "Show statistics during simulation")
+	flag.StringVar(&colorMode, "color", "", "Color mode: 'age' for age-based coloring")
 }
 
 func main() {
@@ -410,12 +478,37 @@ func main() {
 		LastFrameTime: time.Now(),
 	}
 
+	// Initialize age map if color mode is enabled
+	var ageMap [][]int
+	useColorMode := colorMode == "age"
+	if useColorMode {
+		ageMap = make([][]int, DY)
+		for y := 0; y < DY; y++ {
+			ageMap[y] = make([]int, DX)
+			for x := 0; x < DX; x++ {
+				if matrix[y][x] == 1 {
+					ageMap[y][x] = 1
+				}
+			}
+		}
+	}
+
 	for i := 0; i < generations; i++ {
 		prevLivingCells := stats.LivingCells
-		matrix = step(matrix)
+
+		if useColorMode {
+			matrix, ageMap = stepWithAge(matrix, ageMap)
+		} else {
+			matrix = step(matrix)
+		}
+
 		updateStatistics(&stats, matrix, prevLivingCells)
 
-		termboxErr = flush(matrix)
+		if useColorMode {
+			termboxErr = flushWithColor(matrix, ageMap)
+		} else {
+			termboxErr = flush(matrix)
+		}
 		if termboxErr != nil {
 			panic(termboxErr)
 		}
