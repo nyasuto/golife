@@ -24,7 +24,19 @@ var (
 	speed       int
 	generations int
 	pattern     string
+	showStats   bool
 )
+
+// Statistics holds simulation statistics
+type Statistics struct {
+	Generation    int
+	LivingCells   int
+	Births        int
+	Deaths        int
+	StartTime     time.Time
+	LastFrameTime time.Time
+	FPS           float64
+}
 
 // DX is width
 var DX = defaultWidth
@@ -167,6 +179,48 @@ func listPatterns() string {
 	return result
 }
 
+// countLivingCells counts the number of living cells in the grid
+func countLivingCells(data [][]int) int {
+	count := 0
+	for y := 0; y < len(data); y++ {
+		for x := 0; x < len(data[y]); x++ {
+			if data[y][x] == 1 {
+				count++
+			}
+		}
+	}
+	return count
+}
+
+// updateStatistics updates the statistics for the current generation
+func updateStatistics(stats *Statistics, data [][]int, prevLivingCells int) {
+	stats.Generation++
+	stats.LivingCells = countLivingCells(data)
+
+	// Calculate births and deaths
+	diff := stats.LivingCells - prevLivingCells
+	if diff > 0 {
+		stats.Births = diff
+		stats.Deaths = 0
+	} else if diff < 0 {
+		stats.Births = 0
+		stats.Deaths = -diff
+	} else {
+		stats.Births = 0
+		stats.Deaths = 0
+	}
+
+	// Calculate FPS
+	now := time.Now()
+	if !stats.LastFrameTime.IsZero() {
+		frameDuration := now.Sub(stats.LastFrameTime).Seconds()
+		if frameDuration > 0 {
+			stats.FPS = 1.0 / frameDuration
+		}
+	}
+	stats.LastFrameTime = now
+}
+
 func randomize() [][]int {
 	result := make([][]int, DY)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -249,12 +303,45 @@ func flush(data [][]int) error {
 
 }
 
+// displayStatistics displays statistics on the screen
+func displayStatistics(stats Statistics) {
+	if !showStats {
+		return
+	}
+
+	// Calculate position (top-right corner)
+	startX := DX - 35
+	startY := 0
+
+	// Only display if there's enough space
+	if startX < 0 {
+		return
+	}
+
+	lines := []string{
+		"╔═══════════════════════════════╗",
+		fmt.Sprintf("║ Generation: %-17d ║", stats.Generation),
+		fmt.Sprintf("║ Living cells: %-15d ║", stats.LivingCells),
+		fmt.Sprintf("║ Births: +%-20d ║", stats.Births),
+		fmt.Sprintf("║ Deaths: -%-20d ║", stats.Deaths),
+		fmt.Sprintf("║ FPS: %-24.1f ║", stats.FPS),
+		"╚═══════════════════════════════╝",
+	}
+
+	for i, line := range lines {
+		for j, ch := range line {
+			termbox.SetCell(startX+j, startY+i, ch, termbox.ColorCyan, termbox.ColorDefault)
+		}
+	}
+}
+
 func init() {
 	flag.IntVar(&width, "width", defaultWidth, "Grid width")
 	flag.IntVar(&height, "height", defaultHeight, "Grid height")
 	flag.IntVar(&speed, "speed", defaultSpeed, "Animation speed in milliseconds")
 	flag.IntVar(&generations, "generations", defaultGenerations, "Number of generations to simulate")
 	flag.StringVar(&pattern, "pattern", "", "Pattern to load (use 'list' to see available patterns)")
+	flag.BoolVar(&showStats, "stats", false, "Show statistics during simulation")
 }
 
 func main() {
@@ -315,9 +402,26 @@ func main() {
 		panic(termboxErr)
 	}
 
+	// Initialize statistics
+	stats := Statistics{
+		Generation:    0,
+		LivingCells:   countLivingCells(matrix),
+		StartTime:     time.Now(),
+		LastFrameTime: time.Now(),
+	}
+
 	for i := 0; i < generations; i++ {
+		prevLivingCells := stats.LivingCells
 		matrix = step(matrix)
+		updateStatistics(&stats, matrix, prevLivingCells)
+
 		termboxErr = flush(matrix)
+		if termboxErr != nil {
+			panic(termboxErr)
+		}
+
+		displayStatistics(stats)
+		termboxErr = termbox.Flush()
 		if termboxErr != nil {
 			panic(termboxErr)
 		}
