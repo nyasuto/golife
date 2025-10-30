@@ -25,21 +25,18 @@ jobs:
         with:
           version: latest
 
-  # Test job with multiple Go versions
+  # Test job
   test:
-    name: Test (Go ${{ matrix.go-version }})
+    name: Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.24', '1.25']
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Set up Go ${{ matrix.go-version }}
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: '1.25'
 
       - name: Get dependencies
         run: go mod download
@@ -51,7 +48,6 @@ jobs:
         run: go tool cover -func=coverage.out
 
       - name: Upload coverage to Codecov
-        if: matrix.go-version == '1.25'
         uses: codecov/codecov-action@v5
         with:
           file: ./coverage.out
