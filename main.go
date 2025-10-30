@@ -23,6 +23,7 @@ var (
 	height      int
 	speed       int
 	generations int
+	pattern     string
 )
 
 // DX is width
@@ -30,6 +31,141 @@ var DX = defaultWidth
 
 // DY is height
 var DY = defaultHeight
+
+// Pattern represents a predefined pattern
+type Pattern struct {
+	Name        string
+	Description string
+	Width       int
+	Height      int
+	Cells       [][]int
+}
+
+// availablePatterns returns a map of all available patterns
+func availablePatterns() map[string]Pattern {
+	return map[string]Pattern{
+		"glider": {
+			Name:        "Glider",
+			Description: "A small pattern that moves diagonally",
+			Width:       3,
+			Height:      3,
+			Cells: [][]int{
+				{0, 1, 0},
+				{0, 0, 1},
+				{1, 1, 1},
+			},
+		},
+		"blinker": {
+			Name:        "Blinker",
+			Description: "A period-2 oscillator",
+			Width:       3,
+			Height:      1,
+			Cells: [][]int{
+				{1, 1, 1},
+			},
+		},
+		"toad": {
+			Name:        "Toad",
+			Description: "A period-2 oscillator",
+			Width:       4,
+			Height:      2,
+			Cells: [][]int{
+				{0, 1, 1, 1},
+				{1, 1, 1, 0},
+			},
+		},
+		"beacon": {
+			Name:        "Beacon",
+			Description: "A period-2 oscillator",
+			Width:       4,
+			Height:      4,
+			Cells: [][]int{
+				{1, 1, 0, 0},
+				{1, 1, 0, 0},
+				{0, 0, 1, 1},
+				{0, 0, 1, 1},
+			},
+		},
+		"pulsar": {
+			Name:        "Pulsar",
+			Description: "A period-3 oscillator",
+			Width:       13,
+			Height:      13,
+			Cells: [][]int{
+				{0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
+				{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
+				{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
+				{0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+				{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
+				{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
+				{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+			},
+		},
+		"glider-gun": {
+			Name:        "Gosper's Glider Gun",
+			Description: "A pattern that continuously generates gliders",
+			Width:       36,
+			Height:      9,
+			Cells: [][]int{
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
+				{1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			},
+		},
+	}
+}
+
+// loadPattern loads a predefined pattern into the center of the grid
+func loadPattern(patternName string) ([][]int, error) {
+	patterns := availablePatterns()
+	p, exists := patterns[patternName]
+	if !exists {
+		return nil, fmt.Errorf("pattern '%s' not found", patternName)
+	}
+
+	// Create empty grid
+	result := make([][]int, DY)
+	for y := 0; y < DY; y++ {
+		result[y] = make([]int, DX)
+	}
+
+	// Calculate center position
+	startX := (DX - p.Width) / 2
+	startY := (DY - p.Height) / 2
+
+	// Place pattern in the center
+	for y := 0; y < p.Height && startY+y < DY; y++ {
+		for x := 0; x < p.Width && startX+x < DX; x++ {
+			if startY+y >= 0 && startX+x >= 0 {
+				result[startY+y][startX+x] = p.Cells[y][x]
+			}
+		}
+	}
+
+	return result, nil
+}
+
+// listPatterns returns a formatted string of all available patterns
+func listPatterns() string {
+	patterns := availablePatterns()
+	result := "Available patterns:\n"
+	for name, p := range patterns {
+		result += fmt.Sprintf("  %s: %s\n", name, p.Description)
+	}
+	return result
+}
 
 func randomize() [][]int {
 	result := make([][]int, DY)
@@ -118,10 +254,17 @@ func init() {
 	flag.IntVar(&height, "height", defaultHeight, "Grid height")
 	flag.IntVar(&speed, "speed", defaultSpeed, "Animation speed in milliseconds")
 	flag.IntVar(&generations, "generations", defaultGenerations, "Number of generations to simulate")
+	flag.StringVar(&pattern, "pattern", "", "Pattern to load (use 'list' to see available patterns)")
 }
 
 func main() {
 	flag.Parse()
+
+	// Handle pattern list request
+	if pattern == "list" {
+		fmt.Print(listPatterns())
+		return
+	}
 
 	// Validate parameters
 	if width <= 0 || height <= 0 {
@@ -144,24 +287,39 @@ func main() {
 	DX = width
 	DY = height
 
-	var matrix = randomize()
+	// Initialize matrix
+	var matrix [][]int
+	var err error
 
-	err := termbox.Init()
-	if err != nil {
-		panic(err)
+	if pattern != "" {
+		// Load predefined pattern
+		matrix, err = loadPattern(pattern)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			fmt.Print(listPatterns())
+			return
+		}
+	} else {
+		// Use random initialization
+		matrix = randomize()
+	}
+
+	termboxErr := termbox.Init()
+	if termboxErr != nil {
+		panic(termboxErr)
 	}
 	defer termbox.Close()
 
-	err = termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	if err != nil {
-		panic(err)
+	termboxErr = termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	if termboxErr != nil {
+		panic(termboxErr)
 	}
 
 	for i := 0; i < generations; i++ {
 		matrix = step(matrix)
-		err = flush(matrix)
-		if err != nil {
-			panic(err)
+		termboxErr = flush(matrix)
+		if termboxErr != nil {
+			panic(termboxErr)
 		}
 
 		time.Sleep(time.Duration(speed) * time.Millisecond)
