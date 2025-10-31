@@ -19,13 +19,15 @@ const (
 
 // Configuration variables
 var (
-	width       int
-	height      int
-	speed       int
-	generations int
-	pattern     string
-	showStats   bool
-	colorMode   string
+	width        int
+	height       int
+	speed        int
+	generations  int
+	pattern      string
+	showStats    bool
+	colorMode    string
+	interactive  bool
+	currentSpeed int // Current speed in interactive mode
 )
 
 // Statistics holds simulation statistics
@@ -402,6 +404,33 @@ func displayStatistics(stats Statistics) {
 	}
 }
 
+// displayHelp displays keyboard controls
+func displayHelp() {
+	startX := 2
+	startY := DY - 10
+
+	if startY < 0 {
+		return
+	}
+
+	lines := []string{
+		"╔═══════════════════════════════╗",
+		"║ Controls:                     ║",
+		"║ Space - Pause/Resume          ║",
+		"║ n     - Next step             ║",
+		"║ +/-   - Speed up/down         ║",
+		"║ r     - Restart (random)      ║",
+		"║ q/Esc - Quit                  ║",
+		"╚═══════════════════════════════╝",
+	}
+
+	for i, line := range lines {
+		for j, ch := range line {
+			termbox.SetCell(startX+j, startY+i, ch, termbox.ColorYellow, termbox.ColorDefault)
+		}
+	}
+}
+
 func init() {
 	flag.IntVar(&width, "width", defaultWidth, "Grid width")
 	flag.IntVar(&height, "height", defaultHeight, "Grid height")
@@ -410,6 +439,7 @@ func init() {
 	flag.StringVar(&pattern, "pattern", "", "Pattern to load (use 'list' to see available patterns)")
 	flag.BoolVar(&showStats, "stats", false, "Show statistics during simulation")
 	flag.StringVar(&colorMode, "color", "", "Color mode: 'age' for age-based coloring")
+	flag.BoolVar(&interactive, "interactive", false, "Enable interactive mode (keyboard controls)")
 }
 
 func main() {
@@ -493,7 +523,18 @@ func main() {
 		}
 	}
 
-	for i := 0; i < generations; i++ {
+	currentSpeed = speed
+
+	if interactive {
+		runInteractive(matrix, ageMap, useColorMode, stats)
+	} else {
+		runAutomatic(matrix, ageMap, useColorMode, stats, generations)
+	}
+}
+
+// runAutomatic runs the simulation automatically for a fixed number of generations
+func runAutomatic(matrix [][]int, ageMap [][]int, useColorMode bool, stats Statistics, gens int) {
+	for i := 0; i < gens; i++ {
 		prevLivingCells := stats.LivingCells
 
 		if useColorMode {
@@ -505,20 +546,137 @@ func main() {
 		updateStatistics(&stats, matrix, prevLivingCells)
 
 		if useColorMode {
-			termboxErr = flushWithColor(matrix, ageMap)
+			termboxErr := flushWithColor(matrix, ageMap)
+			if termboxErr != nil {
+				panic(termboxErr)
+			}
 		} else {
-			termboxErr = flush(matrix)
-		}
-		if termboxErr != nil {
-			panic(termboxErr)
+			termboxErr := flush(matrix)
+			if termboxErr != nil {
+				panic(termboxErr)
+			}
 		}
 
 		displayStatistics(stats)
-		termboxErr = termbox.Flush()
+		termboxErr := termbox.Flush()
 		if termboxErr != nil {
 			panic(termboxErr)
 		}
 
 		time.Sleep(time.Duration(speed) * time.Millisecond)
 	}
+}
+
+// runInteractive runs the simulation in interactive mode with keyboard controls
+func runInteractive(matrix [][]int, ageMap [][]int, useColorMode bool, stats Statistics) {
+	paused := false
+	running := true
+	eventQueue := make(chan termbox.Event)
+
+	// Start event polling goroutine
+	go func() {
+		for {
+			eventQueue <- termbox.PollEvent()
+		}
+	}()
+
+	// Initial render
+	render(matrix, ageMap, useColorMode, stats)
+
+	for running {
+		select {
+		case ev := <-eventQueue:
+			if ev.Type == termbox.EventKey {
+				switch ev.Key {
+				case termbox.KeyEsc:
+					running = false
+				case termbox.KeySpace:
+					paused = !paused
+				default:
+					switch ev.Ch {
+					case 'q':
+						running = false
+					case ' ':
+						paused = !paused
+					case 'n':
+						// Step once
+						if paused {
+							matrix, ageMap = doStep(matrix, ageMap, useColorMode, &stats)
+							render(matrix, ageMap, useColorMode, stats)
+						}
+					case '+', '=':
+						// Speed up (decrease delay)
+						if currentSpeed > 10 {
+							currentSpeed -= 10
+						}
+					case '-', '_':
+						// Slow down (increase delay)
+						if currentSpeed < 1000 {
+							currentSpeed += 10
+						}
+					case 'r':
+						// Restart with random
+						matrix = randomize()
+						stats = Statistics{
+							Generation:    0,
+							LivingCells:   countLivingCells(matrix),
+							StartTime:     time.Now(),
+							LastFrameTime: time.Now(),
+						}
+						if useColorMode {
+							ageMap = make([][]int, DY)
+							for y := 0; y < DY; y++ {
+								ageMap[y] = make([]int, DX)
+								for x := 0; x < DX; x++ {
+									if matrix[y][x] == 1 {
+										ageMap[y][x] = 1
+									}
+								}
+							}
+						}
+						render(matrix, ageMap, useColorMode, stats)
+					}
+				}
+			}
+
+		default:
+			if !paused {
+				matrix, ageMap = doStep(matrix, ageMap, useColorMode, &stats)
+				render(matrix, ageMap, useColorMode, stats)
+				time.Sleep(time.Duration(currentSpeed) * time.Millisecond)
+			} else {
+				time.Sleep(50 * time.Millisecond)
+			}
+		}
+	}
+}
+
+// doStep performs one simulation step and updates statistics
+func doStep(matrix [][]int, ageMap [][]int, useColorMode bool, stats *Statistics) ([][]int, [][]int) {
+	prevLivingCells := stats.LivingCells
+
+	if useColorMode {
+		matrix, ageMap = stepWithAge(matrix, ageMap)
+	} else {
+		matrix = step(matrix)
+		// Keep ageMap unchanged if not using color mode
+	}
+
+	updateStatistics(stats, matrix, prevLivingCells)
+	return matrix, ageMap
+}
+
+// render draws the current state to the screen
+func render(matrix [][]int, ageMap [][]int, useColorMode bool, stats Statistics) {
+	if useColorMode {
+		_ = flushWithColor(matrix, ageMap)
+	} else {
+		_ = flush(matrix)
+	}
+
+	displayStatistics(stats)
+	if interactive {
+		displayHelp()
+	}
+	_ = termbox.Flush()
 }
