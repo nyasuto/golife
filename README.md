@@ -9,8 +9,10 @@ Conway's Game of Life implementation in Go with terminal UI using termbox-go.
 
 - 🎮 **Configurable Parameters**: Customize grid size, animation speed, and generation count via command-line flags
 - 🎨 **Pattern Presets**: Built-in famous Life patterns (Glider, Pulsar, Gosper's Glider Gun, etc.)
-- 🧪 **Comprehensive Tests**: 72.4% test coverage with extensive unit tests
-- ⚡ **Performance**: Optimized Game of Life algorithm with efficient neighbor counting
+- 🌐 **WebGL 3D Viewer**: Real-time 3D visualization using Three.js with Bays's Glider
+- 📊 **Multi-dimensional Support**: 2D, 2.5D, and 3D cellular automata
+- 🧪 **Comprehensive Tests**: Extensive unit tests with high coverage
+- ⚡ **Performance**: Optimized algorithms with parallel processing (4.5-6.6x speedup)
 - 🛠️ **Modern Development**: CI/CD pipeline with automated testing, linting, and quality checks
 
 ## Installation
@@ -76,6 +78,34 @@ golife includes famous Game of Life patterns as presets:
 # - pulsar: A period-3 oscillator
 # - glider-gun: Gosper's Glider Gun (continuously generates gliders)
 ```
+
+### 3D WebGL Viewer
+
+Experience Game of Life in 3D with real-time WebGL visualization:
+
+```bash
+# Start the WebGL viewer
+make web-viewer
+
+# Or run directly
+./bin/web-viewer
+```
+
+Then open http://localhost:8080 in your browser.
+
+**Features:**
+- 🎬 Real-time 3D voxel rendering with Three.js
+- 🔄 WebSocket streaming for live updates
+- 🎮 Interactive camera controls (orbit, zoom, pan)
+- 🎨 Gradient coloring based on Z-depth
+- 📊 Live statistics (generation, population, FPS)
+- ⚡ Instanced rendering for performance
+- 🧬 Simulates Bays's Glider (10-cell, period-4) in B6/S567 rule
+
+**Controls:**
+- **Mouse drag**: Rotate camera
+- **Mouse wheel**: Zoom in/out
+- **Right click drag**: Pan view
 
 ## Development
 
