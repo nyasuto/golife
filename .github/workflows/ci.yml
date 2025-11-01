@@ -77,7 +77,8 @@ jobs:
 
       - name: Verify binary
         run: |
-          go build -o golife
+          cd cmd/golife && go build -o ../../golife
+          cd ../..
           ./golife --help || echo "Binary built successfully (help flag not implemented)"
 
   # Quality check job
