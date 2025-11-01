@@ -2,6 +2,7 @@ package universe
 
 import (
 	"golife/pkg/core"
+	"golife/pkg/rules"
 )
 
 // Universe25D represents a 2.5D universe with multiple 2D layers
@@ -9,8 +10,9 @@ type Universe25D struct {
 	width, height, depth int
 	layers               []*Universe2D
 	layerInteraction     bool
-	verticalWeight       float64 // Weight for vertical neighbors (0.0-1.0)
+	verticalWeight       float64 // Weight for vertical neighbors (0.0-1.0) - deprecated, use interactionRule
 	rule                 core.Rule
+	interactionRule      rules.LayerInteractionRule // Optional: layer interaction rule
 }
 
 // New25D creates a new 2.5D universe with the given dimensions and rule
@@ -20,14 +22,18 @@ func New25D(width, height, depth int, rule core.Rule) *Universe25D {
 		layers[z] = New2D(width, height, rule)
 	}
 
+	// Default to weighted neighbors rule for backward compatibility
+	defaultInteractionRule := rules.NewWeightedNeighborsRule(rule, 0.3)
+
 	return &Universe25D{
 		width:            width,
 		height:           height,
 		depth:            depth,
 		layers:           layers,
 		layerInteraction: false,
-		verticalWeight:   0.3, // Default: vertical neighbors count as 30%
+		verticalWeight:   0.3, // Deprecated: kept for backward compatibility
 		rule:             rule,
+		interactionRule:  defaultInteractionRule,
 	}
 }
 
@@ -70,10 +76,23 @@ func (u *Universe25D) SetLayerInteraction(enabled bool) {
 }
 
 // SetVerticalWeight sets the weight for vertical neighbors (0.0-1.0)
+// Deprecated: Use SetInteractionRule with WeightedNeighborsRule instead
 func (u *Universe25D) SetVerticalWeight(weight float64) {
 	if weight >= 0.0 && weight <= 1.0 {
 		u.verticalWeight = weight
+		// Update interaction rule to match
+		u.interactionRule = rules.NewWeightedNeighborsRule(u.rule, weight)
 	}
+}
+
+// SetInteractionRule sets the layer interaction rule
+func (u *Universe25D) SetInteractionRule(rule rules.LayerInteractionRule) {
+	u.interactionRule = rule
+}
+
+// GetInteractionRule returns the current layer interaction rule
+func (u *Universe25D) GetInteractionRule() rules.LayerInteractionRule {
+	return u.interactionRule
 }
 
 // Step executes one generation
@@ -113,22 +132,32 @@ func (u *Universe25D) stepWithInteraction() {
 				// Count vertical neighbors (upper and lower layers)
 				verticalNeighbors := u.countVerticalNeighbors(x, y, z)
 
-				// Weighted total neighbors
-				totalNeighbors := float64(horizontalNeighbors) + float64(verticalNeighbors)*u.verticalWeight
-				neighborCount := int(totalNeighbors + 0.5) // Round to nearest int
-
+				// Get current and adjacent layer states
 				currentState := u.layers[z].Get(coord2D)
+				var upperState, lowerState core.CellState
+				if z > 0 {
+					upperState = u.layers[z-1].Get(coord2D)
+				}
+				if z < u.depth-1 {
+					lowerState = u.layers[z+1].Get(coord2D)
+				}
 
-				// Apply rule
+				// Use interaction rule to calculate effective neighbor count
+				neighborCount := u.interactionRule.CalculateNeighborCount(
+					horizontalNeighbors, verticalNeighbors,
+					currentState, upperState, lowerState,
+				)
+
+				// Apply rule with layer interaction
 				var newState core.CellState
 				if currentState == core.Dead {
-					if u.rule.ShouldBirth(neighborCount) {
+					if u.interactionRule.ShouldBirth(neighborCount, upperState, lowerState) {
 						newState = core.Alive
 					} else {
 						newState = core.Dead
 					}
 				} else {
-					if u.rule.ShouldSurvive(neighborCount, currentState) {
+					if u.interactionRule.ShouldSurvive(neighborCount, currentState, upperState, lowerState) {
 						newState = core.Alive
 					} else {
 						newState = core.Dead
