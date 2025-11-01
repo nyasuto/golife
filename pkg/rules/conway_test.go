@@ -22,7 +22,7 @@ func TestConwayRule_ShouldBirth(t *testing.T) {
 		{0, false},
 		{1, false},
 		{2, false},
-		{3, true},  // Birth at exactly 3 neighbors
+		{3, true}, // Birth at exactly 3 neighbors
 		{4, false},
 		{5, false},
 		{8, false},
