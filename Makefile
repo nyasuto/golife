@@ -16,7 +16,7 @@ BINARY_WINDOWS=$(BINARY_NAME).exe
 # Build directory
 BUILD_DIR=bin
 
-.PHONY: all build clean test coverage run run-auto run-pattern help fmt vet quality deps tidy
+.PHONY: all build clean test coverage run run-auto run-pattern demo-multi demo-25d help fmt vet quality deps tidy
 
 # Default target
 all: help
@@ -28,6 +28,8 @@ help:
 	@echo "  make run          - Run with interactive mode and all features"
 	@echo "  make run-auto     - Run automatic mode (100 generations)"
 	@echo "  make run-pattern  - Run with Gosper's Glider Gun pattern"
+	@echo "  make demo-multi   - Run multi-layer 2.5D visualization demo"
+	@echo "  make demo-25d     - Run 2.5D patterns catalog demo"
 	@echo "  make test         - Run tests"
 	@echo "  make coverage     - Run tests with coverage report"
 	@echo "  make quality      - Run all quality checks (fmt, vet, test)"
@@ -60,6 +62,16 @@ run-auto: build
 run-pattern: build
 	@echo "Running $(BINARY_NAME) with Gosper's Glider Gun pattern..."
 	@./$(BUILD_DIR)/$(BINARY_NAME) --interactive --stats --color age --pattern glider-gun --speed 100
+
+## demo-multi: Run multi-layer 2.5D visualization demo
+demo-multi:
+	@echo "Running multi-layer 2.5D visualization demo..."
+	$(GOCMD) run examples/multi-layer/main.go
+
+## demo-25d: Run 2.5D patterns catalog demo
+demo-25d:
+	@echo "Running 2.5D patterns catalog demo..."
+	$(GOCMD) run examples/25d-patterns/main.go
 
 ## test: Run tests
 test:
