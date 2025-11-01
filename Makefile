@@ -16,7 +16,7 @@ BINARY_WINDOWS=$(BINARY_NAME).exe
 # Build directory
 BUILD_DIR=bin
 
-.PHONY: all build clean test coverage run help fmt vet quality deps tidy
+.PHONY: all build clean test coverage run run-auto run-pattern help fmt vet quality deps tidy
 
 # Default target
 all: help
@@ -25,7 +25,9 @@ all: help
 help:
 	@echo "Available targets:"
 	@echo "  make build        - Build the binary"
-	@echo "  make run          - Run the program"
+	@echo "  make run          - Run with interactive mode and all features"
+	@echo "  make run-auto     - Run automatic mode (100 generations)"
+	@echo "  make run-pattern  - Run with Gosper's Glider Gun pattern"
 	@echo "  make test         - Run tests"
 	@echo "  make coverage     - Run tests with coverage report"
 	@echo "  make quality      - Run all quality checks (fmt, vet, test)"
@@ -44,10 +46,20 @@ build:
 	@mkdir -p $(BUILD_DIR)
 	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -v
 
-## run: Run the program
+## run: Run the program with interactive mode and all features
 run: build
-	@echo "Running $(BINARY_NAME)..."
-	@./$(BUILD_DIR)/$(BINARY_NAME)
+	@echo "Running $(BINARY_NAME) in interactive mode with all features..."
+	@./$(BUILD_DIR)/$(BINARY_NAME) --interactive --stats --color age --width 80 --height 40 --speed 100
+
+## run-auto: Run automatic mode for 100 generations
+run-auto: build
+	@echo "Running $(BINARY_NAME) in automatic mode..."
+	@./$(BUILD_DIR)/$(BINARY_NAME) --stats --color age --width 80 --height 40 --speed 50 --generations 100
+
+## run-pattern: Run with Gosper's Glider Gun pattern in interactive mode
+run-pattern: build
+	@echo "Running $(BINARY_NAME) with Gosper's Glider Gun pattern..."
+	@./$(BUILD_DIR)/$(BINARY_NAME) --interactive --stats --color age --pattern glider-gun --speed 100
 
 ## test: Run tests
 test:
