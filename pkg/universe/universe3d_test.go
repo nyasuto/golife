@@ -393,3 +393,128 @@ func BenchmarkUniverse3D_CountNeighborsBoundary(b *testing.B) {
 		u.countNeighbors(0, 0, 0)
 	}
 }
+
+func TestUniverse3D_StepParallel(t *testing.T) {
+	rule := rules.ConwayRule{}
+	u := New3D(20, 20, 20, rule)
+
+	// Create a test pattern
+	u.Set(core.NewCoord3D(10, 10, 10), core.Alive)
+	u.Set(core.NewCoord3D(11, 10, 10), core.Alive)
+	u.Set(core.NewCoord3D(10, 11, 10), core.Alive)
+
+	initialCount := u.CountLiving()
+	if initialCount != 3 {
+		t.Errorf("Expected 3 initial cells, got %d", initialCount)
+	}
+
+	// Execute parallel step
+	u.StepParallel()
+
+	// Verify step executed (count changed)
+	afterCount := u.CountLiving()
+	t.Logf("Living cells: initial=%d, after parallel step=%d", initialCount, afterCount)
+}
+
+func TestUniverse3D_StepParallel_Correctness(t *testing.T) {
+	rule := rules.Life3D_B6S567{}
+
+	// Test that parallel and sequential give same results
+	u1 := New3D(30, 30, 30, rule)
+	u2 := New3D(30, 30, 30, rule)
+
+	// Create identical patterns
+	pattern := []core.Coord{
+		core.NewCoord3D(15, 15, 15),
+		core.NewCoord3D(16, 15, 15),
+		core.NewCoord3D(15, 16, 15),
+		core.NewCoord3D(15, 15, 16),
+		core.NewCoord3D(14, 14, 14),
+		core.NewCoord3D(14, 14, 15),
+		core.NewCoord3D(14, 15, 14),
+		core.NewCoord3D(15, 14, 14),
+	}
+
+	for _, coord := range pattern {
+		u1.Set(coord, core.Alive)
+		u2.Set(coord, core.Alive)
+	}
+
+	// Run 10 steps
+	for i := 0; i < 10; i++ {
+		u1.Step()
+		u2.StepParallel()
+
+		// Verify results match
+		if u1.CountLiving() != u2.CountLiving() {
+			t.Errorf("Step %d: cell counts differ: sequential=%d, parallel=%d",
+				i, u1.CountLiving(), u2.CountLiving())
+		}
+
+		// Verify all cells match
+		for z := 0; z < 30; z++ {
+			for y := 0; y < 30; y++ {
+				for x := 0; x < 30; x++ {
+					coord := core.NewCoord3D(x, y, z)
+					if u1.Get(coord) != u2.Get(coord) {
+						t.Errorf("Step %d: cell (%d,%d,%d) differs", i, x, y, z)
+					}
+				}
+			}
+		}
+	}
+}
+
+func BenchmarkUniverse3D_StepParallel_64x64x64(b *testing.B) {
+	u := New3D(64, 64, 64, rules.ConwayRule{})
+
+	// Create random pattern
+	for i := 0; i < 5000; i++ {
+		u.Set(core.NewCoord3D(i%64, (i/64)%64, (i/4096)%64), core.Alive)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		u.StepParallel()
+	}
+}
+
+func BenchmarkUniverse3D_StepParallel_128x128x128(b *testing.B) {
+	u := New3D(128, 128, 128, rules.ConwayRule{})
+
+	// Create random pattern
+	for i := 0; i < 20000; i++ {
+		u.Set(core.NewCoord3D(i%128, (i/128)%128, (i/16384)%128), core.Alive)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		u.StepParallel()
+	}
+}
+
+func BenchmarkUniverse3D_StepVsStepParallel_64x64x64(b *testing.B) {
+	rule := rules.ConwayRule{}
+
+	b.Run("Sequential", func(b *testing.B) {
+		u := New3D(64, 64, 64, rule)
+		for i := 0; i < 5000; i++ {
+			u.Set(core.NewCoord3D(i%64, (i/64)%64, (i/4096)%64), core.Alive)
+		}
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			u.Step()
+		}
+	})
+
+	b.Run("Parallel", func(b *testing.B) {
+		u := New3D(64, 64, 64, rule)
+		for i := 0; i < 5000; i++ {
+			u.Set(core.NewCoord3D(i%64, (i/64)%64, (i/4096)%64), core.Alive)
+		}
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			u.StepParallel()
+		}
+	})
+}

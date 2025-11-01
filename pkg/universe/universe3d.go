@@ -2,6 +2,8 @@ package universe
 
 import (
 	"golife/pkg/core"
+	"runtime"
+	"sync"
 )
 
 // Universe3D represents a true 3D universe with full 26-neighbor interaction
@@ -206,6 +208,106 @@ func (u *Universe3D) Step() {
 
 	// Swap buffers
 	u.cells, u.nextCells = u.nextCells, u.cells
+}
+
+// StepParallel executes one generation using parallel processing
+// The grid is divided into Z-axis slices and processed concurrently
+func (u *Universe3D) StepParallel() {
+	numWorkers := runtime.NumCPU()
+	if numWorkers > u.depth {
+		numWorkers = u.depth
+	}
+
+	// Calculate slice size for each worker
+	sliceSize := u.depth / numWorkers
+	remainder := u.depth % numWorkers
+
+	var wg sync.WaitGroup
+	wg.Add(numWorkers)
+
+	// Launch workers to process Z-axis slices in parallel
+	for workerID := 0; workerID < numWorkers; workerID++ {
+		zStart := workerID * sliceSize
+		zEnd := zStart + sliceSize
+		if workerID == numWorkers-1 {
+			zEnd += remainder // Last worker handles remainder
+		}
+
+		go func(zStart, zEnd int) {
+			defer wg.Done()
+			u.processZSlice(zStart, zEnd)
+		}(zStart, zEnd)
+	}
+
+	wg.Wait()
+
+	// Swap buffers (single-threaded)
+	u.cells, u.nextCells = u.nextCells, u.cells
+}
+
+// processZSlice processes a range of Z layers [zStart, zEnd)
+func (u *Universe3D) processZSlice(zStart, zEnd int) {
+	// Determine interior region boundaries
+	interiorStartX, interiorEndX := 1, u.width-1
+	interiorStartY, interiorEndY := 1, u.height-1
+	hasInterior := u.width > 2 && u.height > 2
+
+	for z := zStart; z < zEnd; z++ {
+		// Process interior cells (fast path)
+		if hasInterior && z > 0 && z < u.depth-1 {
+			for y := interiorStartY; y < interiorEndY; y++ {
+				for x := interiorStartX; x < interiorEndX; x++ {
+					idx := z*u.height*u.width + y*u.width + x
+					neighbors := u.countNeighborsInterior(idx)
+					currentState := u.cells[idx]
+
+					if currentState == core.Dead {
+						if u.rule.ShouldBirth(neighbors) {
+							u.nextCells[idx] = core.Alive
+						} else {
+							u.nextCells[idx] = core.Dead
+						}
+					} else {
+						if u.rule.ShouldSurvive(neighbors, currentState) {
+							u.nextCells[idx] = core.Alive
+						} else {
+							u.nextCells[idx] = core.Dead
+						}
+					}
+				}
+			}
+		}
+
+		// Process boundary cells (safe path)
+		for y := 0; y < u.height; y++ {
+			for x := 0; x < u.width; x++ {
+				// Skip interior cells if already processed
+				if hasInterior && z > 0 && z < u.depth-1 &&
+					x >= interiorStartX && x < interiorEndX &&
+					y >= interiorStartY && y < interiorEndY {
+					continue
+				}
+
+				idx := z*u.height*u.width + y*u.width + x
+				neighbors := u.countNeighbors(x, y, z)
+				currentState := u.cells[idx]
+
+				if currentState == core.Dead {
+					if u.rule.ShouldBirth(neighbors) {
+						u.nextCells[idx] = core.Alive
+					} else {
+						u.nextCells[idx] = core.Dead
+					}
+				} else {
+					if u.rule.ShouldSurvive(neighbors, currentState) {
+						u.nextCells[idx] = core.Alive
+					} else {
+						u.nextCells[idx] = core.Dead
+					}
+				}
+			}
+		}
+	}
 }
 
 // Clear sets all cells to dead
