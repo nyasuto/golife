@@ -324,6 +324,20 @@ func BenchmarkUniverse3D_Step_64x64x64(b *testing.B) {
 	}
 }
 
+func BenchmarkUniverse3D_Step_128x128x128(b *testing.B) {
+	u := New3D(128, 128, 128, rules.ConwayRule{})
+
+	// Create random pattern
+	for i := 0; i < 20000; i++ {
+		u.Set(core.NewCoord3D(i%128, (i/128)%128, (i/16384)%128), core.Alive)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		u.Step()
+	}
+}
+
 func BenchmarkUniverse3D_CountNeighbors(b *testing.B) {
 	u := New3D(64, 64, 64, rules.ConwayRule{})
 
@@ -339,5 +353,43 @@ func BenchmarkUniverse3D_CountNeighbors(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		u.countNeighbors(32, 32, 32)
+	}
+}
+
+func BenchmarkUniverse3D_CountNeighborsInterior(b *testing.B) {
+	u := New3D(64, 64, 64, rules.ConwayRule{})
+
+	// Set up a dense region
+	for z := 30; z < 34; z++ {
+		for y := 30; y < 34; y++ {
+			for x := 30; x < 34; x++ {
+				u.Set(core.NewCoord3D(x, y, z), core.Alive)
+			}
+		}
+	}
+
+	idx := 32*u.height*u.width + 32*u.width + 32
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		u.countNeighborsInterior(idx)
+	}
+}
+
+func BenchmarkUniverse3D_CountNeighborsBoundary(b *testing.B) {
+	u := New3D(64, 64, 64, rules.ConwayRule{})
+
+	// Set up cells near boundary
+	for z := 0; z < 3; z++ {
+		for y := 0; y < 3; y++ {
+			for x := 0; x < 3; x++ {
+				u.Set(core.NewCoord3D(x, y, z), core.Alive)
+			}
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		u.countNeighbors(0, 0, 0)
 	}
 }
