@@ -69,7 +69,11 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		log.Println("WebSocket upgrade error:", err)
 		return
 	}
-	defer ws.Close()
+	defer func() {
+		if err := ws.Close(); err != nil {
+			log.Println("WebSocket close error:", err)
+		}
+	}()
 
 	// Create 3D universe with Bays's Glider
 	rule := rules.Life3D_B6S567{}
@@ -101,7 +105,10 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		generation++
 
 		// Check for websocket close
-		ws.SetReadDeadline(time.Now().Add(time.Second))
+		if err := ws.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
+			log.Println("SetReadDeadline error:", err)
+			return
+		}
 		if _, _, err := ws.NextReader(); err != nil {
 			// Client disconnected
 			break
