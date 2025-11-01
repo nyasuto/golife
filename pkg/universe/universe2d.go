@@ -11,6 +11,7 @@ type Universe2D struct {
 	width, height int
 	cells         []core.CellState // Flat array for cache locality: [y*width + x]
 	nextCells     []core.CellState // Double buffering
+	ageMap        []int            // Age tracking for each cell
 	rule          core.Rule
 	neighborhood  core.NeighborhoodType
 }
@@ -23,6 +24,7 @@ func New2D(width, height int, rule core.Rule) *Universe2D {
 		height:       height,
 		cells:        make([]core.CellState, size),
 		nextCells:    make([]core.CellState, size),
+		ageMap:       make([]int, size),
 		rule:         rule,
 		neighborhood: core.Moore, // Default to Moore neighborhood (8 neighbors)
 	}
@@ -84,6 +86,8 @@ func (u *Universe2D) countNeighbors(x, y int) int {
 
 // Step executes one generation
 func (u *Universe2D) Step() {
+	newAgeMap := make([]int, len(u.ageMap))
+
 	for y := 0; y < u.height; y++ {
 		for x := 0; x < u.width; x++ {
 			idx := y*u.width + x
@@ -95,15 +99,19 @@ func (u *Universe2D) Step() {
 				// Dead cell: check birth condition
 				if u.rule.ShouldBirth(neighbors) {
 					u.nextCells[idx] = core.Alive
+					newAgeMap[idx] = 1 // Born with age 1
 				} else {
 					u.nextCells[idx] = core.Dead
+					newAgeMap[idx] = 0
 				}
 			} else {
 				// Living cell: check survival condition
 				if u.rule.ShouldSurvive(neighbors, currentState) {
 					u.nextCells[idx] = core.Alive
+					newAgeMap[idx] = u.ageMap[idx] + 1 // Increment age
 				} else {
 					u.nextCells[idx] = core.Dead
+					newAgeMap[idx] = 0
 				}
 			}
 		}
@@ -111,6 +119,7 @@ func (u *Universe2D) Step() {
 
 	// Swap buffers
 	u.cells, u.nextCells = u.nextCells, u.cells
+	u.ageMap = newAgeMap
 }
 
 // Clone creates a deep copy of the universe
@@ -124,6 +133,7 @@ func (u *Universe2D) Clone() core.Universe {
 func (u *Universe2D) Clear() {
 	for i := range u.cells {
 		u.cells[i] = core.Dead
+		u.ageMap[i] = 0
 	}
 }
 
@@ -144,10 +154,30 @@ func (u *Universe2D) Randomize() {
 	for i := range u.cells {
 		if r.Intn(2) == 1 {
 			u.cells[i] = core.Alive
+			u.ageMap[i] = 1
 		} else {
 			u.cells[i] = core.Dead
+			u.ageMap[i] = 0
 		}
 	}
+}
+
+// Width returns the width of the universe
+func (u *Universe2D) Width() int {
+	return u.width
+}
+
+// Height returns the height of the universe
+func (u *Universe2D) Height() int {
+	return u.height
+}
+
+// GetAge returns the age of a cell at the given coordinate
+func (u *Universe2D) GetAge(x, y int) int {
+	if x < 0 || x >= u.width || y < 0 || y >= u.height {
+		return 0
+	}
+	return u.ageMap[y*u.width+x]
 }
 
 // GetCells returns the internal cell array (for compatibility with legacy code)
