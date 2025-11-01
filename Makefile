@@ -47,7 +47,7 @@ help:
 build:
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p $(BUILD_DIR)
-	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -v
+	cd cmd/golife && $(GOBUILD) -o ../../$(BUILD_DIR)/$(BINARY_NAME) -v
 
 ## run: Run the program with interactive mode and all features
 run: build
@@ -130,13 +130,13 @@ tidy:
 build-linux:
 	@echo "Building for Linux..."
 	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_UNIX) -v
+	cd cmd/golife && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o ../../$(BUILD_DIR)/$(BINARY_UNIX) -v
 
 ## build-windows: Build for Windows
 build-windows:
 	@echo "Building for Windows..."
 	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_WINDOWS) -v
+	cd cmd/golife && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) -o ../../$(BUILD_DIR)/$(BINARY_WINDOWS) -v
 
 ## build-all: Build for all platforms
 build-all: build build-linux build-windows
