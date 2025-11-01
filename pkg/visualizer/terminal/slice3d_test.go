@@ -277,46 +277,52 @@ func TestSlice3DView_GetSliceLabel(t *testing.T) {
 
 func TestSlice3DView_WithPattern(t *testing.T) {
 	rule := rules.Life3D_B6S567{}
-	u := universe.New3D(20, 20, 20, rule)
+	u := universe.New3D(30, 30, 30, rule)
 	view := NewSlice3DView(u)
 
-	// Load a 3D pattern
+	// Load Bays's Glider (10 cells)
 	glider := patterns.Glider3D()
 	glider.LoadIntoUniverse3D(u, 10, 10, 10)
 
+	// Verify total cell count
+	totalCells := u.CountLiving()
+	if totalCells != 10 {
+		t.Errorf("Expected 10 cells in Bays's Glider, got %d", totalCells)
+	}
+
 	// Verify pattern is visible in appropriate slices
 	view.SetPlaneType(PlaneXY)
-	view.slicePosition = 10
+	view.slicePosition = 10 // Z=10 layer
 
-	// Glider has cells at (0,0,0), (1,0,0), (0,1,0), (0,0,1) offset by (10,10,10)
-	// So at Z=10: (10,10), (11,10), (10,11) should be alive
-	state1 := view.getCellAt(10, 10)
-	state2 := view.getCellAt(11, 10)
-	state3 := view.getCellAt(10, 11)
+	// Bays's Glider has cells at z=0 and z=1 layers
+	// At offset (10,10,10), cells at z=10 should include:
+	// (11,10,10), (12,10,10), (10,11,10), (12,11,10), (11,12,10)
+	state1 := view.getCellAt(11, 10) // (1,0,0) + offset
+	state2 := view.getCellAt(12, 10) // (2,0,0) + offset
 
-	if state1 != core.Alive || state2 != core.Alive || state3 != core.Alive {
-		t.Error("Glider pattern should be visible at Z=10")
+	if state1 != core.Alive || state2 != core.Alive {
+		t.Error("Bays's Glider pattern should be visible at Z=10")
 	}
 
-	// At Z=11: only (10,10) should be alive
+	// At Z=11: should have the second layer of cells
 	view.slicePosition = 11
-	state4 := view.getCellAt(10, 10)
-	if state4 != core.Alive {
-		t.Error("Glider should have cell at Z=11")
+	state3 := view.getCellAt(11, 10)
+	if state3 != core.Alive {
+		t.Error("Bays's Glider should have cells at Z=11")
 	}
 
-	// Count living cells in Z=10 slice
+	// Count living cells in Z=10 slice (should be 5 cells in layer 0)
 	view.slicePosition = 10
 	count := 0
-	for j := 0; j < 20; j++ {
-		for i := 0; i < 20; i++ {
+	for j := 0; j < 30; j++ {
+		for i := 0; i < 30; i++ {
 			if view.getCellAt(i, j) != core.Dead {
 				count++
 			}
 		}
 	}
-	if count != 3 {
-		t.Errorf("Expected 3 living cells in Z=10 slice, got %d", count)
+	if count != 5 {
+		t.Errorf("Expected 5 living cells in Z=10 slice, got %d", count)
 	}
 }
 
