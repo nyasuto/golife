@@ -16,7 +16,7 @@ BINARY_WINDOWS=$(BINARY_NAME).exe
 # Build directory
 BUILD_DIR=bin
 
-.PHONY: all build clean test coverage run run-auto run-pattern demo demo-multi demo-25d demo-3d web-viewer help fmt vet quality deps tidy
+.PHONY: all build clean test coverage run run-auto run-pattern demo demo-multi demo-25d demo-3d web-viewer build-wasm wasm-test help fmt vet quality deps tidy
 
 # Default target
 all: help
@@ -44,6 +44,8 @@ help:
 	@echo "  make build-linux  - Build for Linux"
 	@echo "  make build-windows- Build for Windows"
 	@echo "  make build-all    - Build for all platforms"
+	@echo "  make build-wasm   - Build WASM binary"
+	@echo "  make wasm-test    - Run WASM test server (http://localhost:8081)"
 
 ## build: Build the binary
 build:
@@ -172,3 +174,26 @@ build-windows:
 ## build-all: Build for all platforms
 build-all: build build-linux build-windows
 	@echo "Built binaries for all platforms in $(BUILD_DIR)/"
+
+## build-wasm: Build WASM binary
+build-wasm:
+	@echo "Building WASM binary..."
+	@GOOS=js GOARCH=wasm $(GOBUILD) -o web/life3d.wasm cmd/wasm-life/main.go
+	@cp "$$(go env GOROOT)/lib/wasm/wasm_exec.js" web/ 2>/dev/null || \
+		echo "Note: wasm_exec.js already present"
+	@ls -lh web/life3d.wasm
+	@echo "WASM binary built successfully"
+
+## wasm-test: Run WASM test server
+wasm-test: build-wasm
+	@echo "=========================================="
+	@echo "  WASM Test Server"
+	@echo "=========================================="
+	@echo ""
+	@echo "Starting HTTP server on :8081"
+	@echo "  URL: http://localhost:8081/wasm-test.html"
+	@echo ""
+	@echo "Press Ctrl+C to stop"
+	@echo "=========================================="
+	@echo ""
+	@cd web && python3 -m http.server 8081
