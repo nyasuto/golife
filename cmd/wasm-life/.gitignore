@@ -1,0 +1,2 @@
+# WASM builds are handled by `make build-wasm`
+*.wasm
