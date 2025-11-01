@@ -181,6 +181,8 @@ func (u *Universe2D) GetAge(x, y int) int {
 }
 
 // GetCells returns the internal cell array (for compatibility with legacy code)
+//
+// Deprecated: Use Get(coord) with core.CellState instead for type-safe access.
 func (u *Universe2D) GetCells() [][]int {
 	result := make([][]int, u.height)
 	for y := 0; y < u.height; y++ {
@@ -197,6 +199,8 @@ func (u *Universe2D) GetCells() [][]int {
 }
 
 // SetCells sets cells from a 2D int array (for compatibility with legacy code)
+//
+// Deprecated: Use Set(coord, state) with core.CellState instead for type-safe access.
 func (u *Universe2D) SetCells(cells [][]int) {
 	for y := 0; y < u.height && y < len(cells); y++ {
 		for x := 0; x < u.width && x < len(cells[y]); x++ {
