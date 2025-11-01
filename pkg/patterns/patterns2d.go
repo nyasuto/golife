@@ -11,16 +11,16 @@ type Pattern2D struct {
 	Description string
 	Width       int
 	Height      int
-	Cells       [][]int // 1 = alive, 0 = dead
+	Cells       [][]core.CellState
 }
 
 // LoadIntoUniverse loads this pattern into a universe at the given offset
 func (p *Pattern2D) LoadIntoUniverse(u *universe.Universe2D, offsetX, offsetY int) {
 	for y := 0; y < len(p.Cells) && y < p.Height; y++ {
 		for x := 0; x < len(p.Cells[y]) && x < p.Width; x++ {
-			if p.Cells[y][x] == 1 {
+			if p.Cells[y][x] != core.Dead {
 				coord := core.NewCoord2D(offsetX+x, offsetY+y)
-				u.Set(coord, core.Alive)
+				u.Set(coord, p.Cells[y][x])
 			}
 		}
 	}
@@ -28,118 +28,140 @@ func (p *Pattern2D) LoadIntoUniverse(u *universe.Universe2D, offsetX, offsetY in
 
 // Glider returns the classic glider pattern
 func Glider() Pattern2D {
+	const (
+		O = core.Dead
+		X = core.Alive
+	)
 	return Pattern2D{
 		Name:        "Glider",
 		Description: "A small pattern that moves diagonally",
 		Width:       3,
 		Height:      3,
-		Cells: [][]int{
-			{0, 1, 0},
-			{0, 0, 1},
-			{1, 1, 1},
+		Cells: [][]core.CellState{
+			{O, X, O},
+			{O, O, X},
+			{X, X, X},
 		},
 	}
 }
 
 // Blinker returns a period-2 oscillator
 func Blinker() Pattern2D {
+	const X = core.Alive
 	return Pattern2D{
 		Name:        "Blinker",
 		Description: "A period-2 oscillator",
 		Width:       3,
 		Height:      1,
-		Cells: [][]int{
-			{1, 1, 1},
+		Cells: [][]core.CellState{
+			{X, X, X},
 		},
 	}
 }
 
 // Toad returns a period-2 oscillator
 func Toad() Pattern2D {
+	const (
+		O = core.Dead
+		X = core.Alive
+	)
 	return Pattern2D{
 		Name:        "Toad",
 		Description: "A period-2 oscillator",
 		Width:       4,
 		Height:      2,
-		Cells: [][]int{
-			{0, 1, 1, 1},
-			{1, 1, 1, 0},
+		Cells: [][]core.CellState{
+			{O, X, X, X},
+			{X, X, X, O},
 		},
 	}
 }
 
 // Beacon returns a period-2 oscillator
 func Beacon() Pattern2D {
+	const (
+		O = core.Dead
+		X = core.Alive
+	)
 	return Pattern2D{
 		Name:        "Beacon",
 		Description: "A period-2 oscillator",
 		Width:       4,
 		Height:      4,
-		Cells: [][]int{
-			{1, 1, 0, 0},
-			{1, 1, 0, 0},
-			{0, 0, 1, 1},
-			{0, 0, 1, 1},
+		Cells: [][]core.CellState{
+			{X, X, O, O},
+			{X, X, O, O},
+			{O, O, X, X},
+			{O, O, X, X},
 		},
 	}
 }
 
 // Pulsar returns a period-3 oscillator
 func Pulsar() Pattern2D {
+	const (
+		O = core.Dead
+		X = core.Alive
+	)
 	return Pattern2D{
 		Name:        "Pulsar",
 		Description: "A period-3 oscillator",
 		Width:       13,
 		Height:      13,
-		Cells: [][]int{
-			{0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
-			{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
-			{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
-			{0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			{0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
-			{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
-			{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
-			{1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			{0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+		Cells: [][]core.CellState{
+			{O, O, X, X, X, O, O, O, X, X, X, O, O},
+			{O, O, O, O, O, O, O, O, O, O, O, O, O},
+			{X, O, O, O, O, X, O, X, O, O, O, O, X},
+			{X, O, O, O, O, X, O, X, O, O, O, O, X},
+			{X, O, O, O, O, X, O, X, O, O, O, O, X},
+			{O, O, X, X, X, O, O, O, X, X, X, O, O},
+			{O, O, O, O, O, O, O, O, O, O, O, O, O},
+			{O, O, X, X, X, O, O, O, X, X, X, O, O},
+			{X, O, O, O, O, X, O, X, O, O, O, O, X},
+			{X, O, O, O, O, X, O, X, O, O, O, O, X},
+			{X, O, O, O, O, X, O, X, O, O, O, O, X},
+			{O, O, O, O, O, O, O, O, O, O, O, O, O},
+			{O, O, X, X, X, O, O, O, X, X, X, O, O},
 		},
 	}
 }
 
 // GliderGun returns the Gosper Glider Gun
 func GliderGun() Pattern2D {
+	const (
+		O = core.Dead
+		X = core.Alive
+	)
 	return Pattern2D{
 		Name:        "Gosper Glider Gun",
 		Description: "A pattern that generates gliders",
 		Width:       36,
 		Height:      9,
-		Cells: [][]int{
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
-			{1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			{1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		Cells: [][]core.CellState{
+			{O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, X, O, O, O, O, O, O, O, O, O, O, O},
+			{O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, X, O, X, O, O, O, O, O, O, O, O, O, O, O},
+			{O, O, O, O, O, O, O, O, O, O, O, O, X, X, O, O, O, O, O, O, X, X, O, O, O, O, O, O, O, O, O, O, O, O, X, X},
+			{O, O, O, O, O, O, O, O, O, O, O, X, O, O, O, X, O, O, O, O, X, X, O, O, O, O, O, O, O, O, O, O, O, O, X, X},
+			{X, X, O, O, O, O, O, O, O, O, X, O, O, O, O, O, X, O, O, O, X, X, O, O, O, O, O, O, O, O, O, O, O, O, O, O},
+			{X, X, O, O, O, O, O, O, O, O, X, O, O, O, X, O, X, X, O, O, O, O, X, O, X, O, O, O, O, O, O, O, O, O, O, O},
+			{O, O, O, O, O, O, O, O, O, O, X, O, O, O, O, O, X, O, O, O, O, O, O, O, X, O, O, O, O, O, O, O, O, O, O, O},
+			{O, O, O, O, O, O, O, O, O, O, O, X, O, O, O, X, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O},
+			{O, O, O, O, O, O, O, O, O, O, O, O, X, X, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O, O},
 		},
 	}
 }
 
 // Block returns a still life (2x2 square)
 func Block() Pattern2D {
+	const X = core.Alive
 	return Pattern2D{
 		Name:        "Block",
 		Description: "A still life (stable pattern)",
 		Width:       2,
 		Height:      2,
-		Cells: [][]int{
-			{1, 1},
-			{1, 1},
+		Cells: [][]core.CellState{
+			{X, X},
+			{X, X},
 		},
 	}
 }
