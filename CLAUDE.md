@@ -2,13 +2,30 @@
 
 ## Project Overview
 
-Conway's Game of Life implementation in Go with:
+Conway's Game of Life implementation in Go with multi-dimensional support (2D → 2.5D → 3D → 4D):
+
+### 現在の実装状況
+
+**Phase 0: アーキテクチャ設計** ✅ 完了
+- 次元非依存のインターフェース (`Universe`, `Rule`, `Coord`)
+- 2D実装 (`Universe2D`)
+- Conway B3/S23ルール
+- パターンライブラリ (Glider, Blinker, Pulsar, etc.)
+
+**Phase 1-3: 多次元実装** 🚧 計画中
+- 2.5D: 複数2D層の相互作用
+- 3D: B6/S567ルール、3Dグライダー
+- 4D: B9/S7-10ルール、超立方体シミュレーション
+
+### 主要機能
 
 - Terminal UI using termbox-go
 - Configurable grid size, speed, and generation count
 - Famous pattern presets (Glider, Pulsar, Gosper's Glider Gun, etc.)
-- 72.4% test coverage
-- CI/CD pipeline with automated testing and quality checks
+- Interactive mode with keyboard controls
+- Statistics display (generation, population, FPS)
+- Age-based color display
+- Multi-dimensional architecture (extensible to 3D/4D)
 
 ## Issue 実装フロー
 
