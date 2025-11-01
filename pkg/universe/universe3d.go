@@ -87,6 +87,7 @@ func (u *Universe3D) Size() core.Coord {
 }
 
 // countNeighbors counts living neighbors for a cell (all 26 neighbors in 3D)
+// This is the boundary-safe version with explicit coordinate checks
 func (u *Universe3D) countNeighbors(x, y, z int) int {
 	count := 0
 
@@ -104,7 +105,7 @@ func (u *Universe3D) countNeighbors(x, y, z int) int {
 				nz := z + dz
 
 				// Check bounds
-				if !u.isValid(nx, ny, nz) {
+				if nx < 0 || nx >= u.width || ny < 0 || ny >= u.height || nz < 0 || nz >= u.depth {
 					continue
 				}
 
@@ -120,26 +121,79 @@ func (u *Universe3D) countNeighbors(x, y, z int) int {
 	return count
 }
 
+// countNeighborsInterior counts neighbors for interior cells (no boundary check needed)
+func (u *Universe3D) countNeighborsInterior(idx int) int {
+	count := 0
+	for _, offset := range u.neighborOffsets {
+		if u.cells[idx+offset] != core.Dead {
+			count++
+		}
+	}
+	return count
+}
+
 // Step executes one generation using the rule
 func (u *Universe3D) Step() {
-	// Calculate next generation
+	// Optimize by separating interior cells (no boundary check) from boundary cells
+	// Interior region: cells that have all 26 neighbors within bounds
+	interiorStartX, interiorEndX := 1, u.width-1
+	interiorStartY, interiorEndY := 1, u.height-1
+	interiorStartZ, interiorEndZ := 1, u.depth-1
+
+	// Check if we have an interior region
+	hasInterior := u.width > 2 && u.height > 2 && u.depth > 2
+
+	if hasInterior {
+		// Process interior cells (fast path - no boundary checks)
+		for z := interiorStartZ; z < interiorEndZ; z++ {
+			for y := interiorStartY; y < interiorEndY; y++ {
+				for x := interiorStartX; x < interiorEndX; x++ {
+					idx := z*u.height*u.width + y*u.width + x
+					neighbors := u.countNeighborsInterior(idx)
+					currentState := u.cells[idx]
+
+					// Apply rule
+					if currentState == core.Dead {
+						if u.rule.ShouldBirth(neighbors) {
+							u.nextCells[idx] = core.Alive
+						} else {
+							u.nextCells[idx] = core.Dead
+						}
+					} else {
+						if u.rule.ShouldSurvive(neighbors, currentState) {
+							u.nextCells[idx] = core.Alive
+						} else {
+							u.nextCells[idx] = core.Dead
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Process boundary cells (with bounds checking)
 	for z := 0; z < u.depth; z++ {
 		for y := 0; y < u.height; y++ {
 			for x := 0; x < u.width; x++ {
+				// Skip interior cells (already processed)
+				if hasInterior && x >= interiorStartX && x < interiorEndX &&
+					y >= interiorStartY && y < interiorEndY &&
+					z >= interiorStartZ && z < interiorEndZ {
+					continue
+				}
+
 				idx := z*u.height*u.width + y*u.width + x
 				neighbors := u.countNeighbors(x, y, z)
 				currentState := u.cells[idx]
 
 				// Apply rule
 				if currentState == core.Dead {
-					// Dead cell: check birth condition
 					if u.rule.ShouldBirth(neighbors) {
 						u.nextCells[idx] = core.Alive
 					} else {
 						u.nextCells[idx] = core.Dead
 					}
 				} else {
-					// Living cell: check survival condition
 					if u.rule.ShouldSurvive(neighbors, currentState) {
 						u.nextCells[idx] = core.Alive
 					} else {
