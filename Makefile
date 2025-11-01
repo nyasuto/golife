@@ -16,7 +16,7 @@ BINARY_WINDOWS=$(BINARY_NAME).exe
 # Build directory
 BUILD_DIR=bin
 
-.PHONY: all build clean test coverage run run-auto run-pattern demo-multi demo-25d help fmt vet quality deps tidy
+.PHONY: all build clean test coverage run run-auto run-pattern demo-multi demo-25d web-viewer help fmt vet quality deps tidy
 
 # Default target
 all: help
@@ -30,6 +30,7 @@ help:
 	@echo "  make run-pattern  - Run with Gosper's Glider Gun pattern"
 	@echo "  make demo-multi   - Run multi-layer 2.5D visualization demo"
 	@echo "  make demo-25d     - Run 2.5D patterns catalog demo"
+	@echo "  make web-viewer   - Run WebGL 3D viewer (http://localhost:8080)"
 	@echo "  make test         - Run tests"
 	@echo "  make coverage     - Run tests with coverage report"
 	@echo "  make quality      - Run all quality checks (fmt, vet, test)"
@@ -72,6 +73,15 @@ demo-multi:
 demo-25d:
 	@echo "Running 2.5D patterns catalog demo..."
 	$(GOCMD) run examples/25d-patterns/main.go
+
+## web-viewer: Run WebGL 3D viewer (opens at http://localhost:8080)
+web-viewer:
+	@echo "Building and starting WebGL 3D viewer..."
+	@mkdir -p $(BUILD_DIR)
+	@cd cmd/web-viewer && $(GOBUILD) -o ../../$(BUILD_DIR)/web-viewer
+	@echo "Starting server at http://localhost:8080"
+	@echo "Press Ctrl+C to stop"
+	@./$(BUILD_DIR)/web-viewer
 
 ## test: Run tests
 test:
