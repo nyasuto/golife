@@ -16,7 +16,7 @@ BINARY_WINDOWS=$(BINARY_NAME).exe
 # Build directory
 BUILD_DIR=bin
 
-.PHONY: all build clean test coverage run run-auto run-pattern demo demo-multi demo-25d demo-3d web-viewer help fmt vet quality deps tidy
+.PHONY: all build clean test coverage run run-auto run-pattern demo-multi demo-25d web-viewer help fmt vet quality deps tidy
 
 # Default target
 all: help
@@ -28,11 +28,9 @@ help:
 	@echo "  make run          - Run with interactive mode and all features"
 	@echo "  make run-auto     - Run automatic mode (100 generations)"
 	@echo "  make run-pattern  - Run with Gosper's Glider Gun pattern"
-	@echo "  make demo         - Show all available demos"
 	@echo "  make demo-multi   - Run multi-layer 2.5D visualization demo"
 	@echo "  make demo-25d     - Run 2.5D patterns catalog demo"
-	@echo "  make demo-3d      - Run WebGL 3D viewer demo (http://localhost:8080)"
-	@echo "  make web-viewer   - Same as demo-3d"
+	@echo "  make web-viewer   - Run WebGL 3D viewer (http://localhost:8080)"
 	@echo "  make test         - Run tests"
 	@echo "  make coverage     - Run tests with coverage report"
 	@echo "  make quality      - Run all quality checks (fmt, vet, test)"
@@ -75,35 +73,6 @@ demo-multi:
 demo-25d:
 	@echo "Running 2.5D patterns catalog demo..."
 	$(GOCMD) run examples/25d-patterns/main.go
-
-## demo-3d: Run WebGL 3D viewer demo (opens at http://localhost:8080)
-demo-3d:
-	@echo "=========================================="
-	@echo "  3D Game of Life - WebGL Demo"
-	@echo "=========================================="
-	@echo ""
-	@echo "Building 3D viewer..."
-	@mkdir -p $(BUILD_DIR)
-	@cd cmd/web-viewer && $(GOBUILD) -o ../../$(BUILD_DIR)/web-viewer
-	@echo ""
-	@echo "Starting 3D WebGL server..."
-	@echo "  URL: http://localhost:8080"
-	@echo ""
-	@echo "Features:"
-	@echo "  - 32x32x32 3D universe"
-	@echo "  - Bays's Glider pattern (3D glider)"
-	@echo "  - B6/S567 rule (3D Life)"
-	@echo "  - Real-time WebGL visualization"
-	@echo ""
-	@echo "Controls:"
-	@echo "  - Mouse drag: Rotate camera"
-	@echo "  - Mouse wheel: Zoom in/out"
-	@echo "  - Right-click drag: Pan view"
-	@echo ""
-	@echo "Press Ctrl+C to stop the server"
-	@echo "=========================================="
-	@echo ""
-	@./$(BUILD_DIR)/web-viewer
 
 ## web-viewer: Run WebGL 3D viewer (opens at http://localhost:8080)
 web-viewer:
