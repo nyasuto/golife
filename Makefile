@@ -16,7 +16,7 @@ BINARY_WINDOWS=$(BINARY_NAME).exe
 # Build directory
 BUILD_DIR=bin
 
-.PHONY: all build clean test coverage run run-auto run-pattern demo demo-multi demo-25d demo-3d web-viewer build-wasm wasm-test help fmt vet quality deps tidy
+.PHONY: all build clean test coverage run run-auto run-pattern demo demo-multi demo-25d demo-3d web-viewer build-wasm wasm-test wasm-api-test help fmt vet quality deps tidy
 
 # Default target
 all: help
@@ -45,7 +45,8 @@ help:
 	@echo "  make build-windows- Build for Windows"
 	@echo "  make build-all    - Build for all platforms"
 	@echo "  make build-wasm   - Build WASM binary"
-	@echo "  make wasm-test    - Run WASM test server (http://localhost:8081)"
+	@echo "  make wasm-test    - Run basic WASM test server (http://localhost:8081)"
+	@echo "  make wasm-api-test- Run WASM API test server (http://localhost:8082)"
 
 ## build: Build the binary
 build:
@@ -184,10 +185,10 @@ build-wasm:
 	@ls -lh web/life3d.wasm
 	@echo "WASM binary built successfully"
 
-## wasm-test: Run WASM test server
+## wasm-test: Run basic WASM test server
 wasm-test: build-wasm
 	@echo "=========================================="
-	@echo "  WASM Test Server"
+	@echo "  WASM Basic Test Server"
 	@echo "=========================================="
 	@echo ""
 	@echo "Starting HTTP server on :8081"
@@ -197,3 +198,33 @@ wasm-test: build-wasm
 	@echo "=========================================="
 	@echo ""
 	@cd web && python3 -m http.server 8081
+
+## wasm-api-test: Run WASM API test server
+wasm-api-test: build-wasm
+	@echo "=========================================="
+	@echo "  WASM API Test Server"
+	@echo "=========================================="
+	@echo ""
+	@echo "Starting HTTP server on :8082"
+	@echo "  URL: http://localhost:8082/wasm-api-test.html"
+	@echo ""
+	@echo "Features:"
+	@echo "  - Interactive API testing"
+	@echo "  - Pattern loading (7 patterns)"
+	@echo "  - Step-by-step simulation"
+	@echo "  - Animation control"
+	@echo "  - Cell inspection"
+	@echo ""
+	@echo "API Functions:"
+	@echo "  - initUniverse(width, height, depth)"
+	@echo "  - loadPattern(name, x, y, z)"
+	@echo "  - step()"
+	@echo "  - getLivingCells()"
+	@echo "  - getUniverseInfo()"
+	@echo "  - clearUniverse()"
+	@echo "  - setCell(x, y, z, alive)"
+	@echo ""
+	@echo "Press Ctrl+C to stop"
+	@echo "=========================================="
+	@echo ""
+	@cd web && python3 -m http.server 8082
