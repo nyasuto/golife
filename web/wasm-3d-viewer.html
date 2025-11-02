@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Game of Life - WASM Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #info {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            z-index: 100;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        #info h2 {
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            background: linear-gradient(45deg, #00d4ff, #0088ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #info .stat {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #info .label {
+            color: #aaa;
+            margin-right: 15px;
+        }
+
+        #info .value {
+            color: #00ff88;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            z-index: 100;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        #controls strong {
+            color: #00d4ff;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #controls div {
+            margin: 5px 0;
+            color: #ccc;
+        }
+
+        #control-panel {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 100;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            min-width: 280px;
+        }
+
+        #control-panel h3 {
+            color: #00d4ff;
+            margin: 0 0 15px 0;
+            font-size: 18px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            color: #aaa;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .control-group select,
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: #fff;
+            font-size: 13px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px;
+            background: linear-gradient(135deg, #00d4ff, #0088ff);
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        button.full-width {
+            grid-column: 1 / -1;
+        }
+
+        #status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: bold;
+            z-index: 99;
+            animation: pulse 2s infinite;
+        }
+
+        #status.ready {
+            background: rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+
+        #status.loading {
+            background: rgba(255, 170, 0, 0.3);
+            color: #ffaa00;
+            border: 1px solid #ffaa00;
+        }
+
+        #status.error {
+            background: rgba(255, 68, 68, 0.3);
+            color: #ff4444;
+            border: 1px solid #ff4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="status" class="loading">⏳ Loading WASM...</div>
+
+    <div id="info">
+        <h2>🎮 3D Game of Life</h2>
+        <div class="stat">
+            <span class="label">Generation:</span>
+            <span class="value" id="generation">0</span>
+        </div>
+        <div class="stat">
+            <span class="label">Population:</span>
+            <span class="value" id="population">0</span>
+        </div>
+        <div class="stat">
+            <span class="label">Universe:</span>
+            <span class="value" id="universe-size">-</span>
+        </div>
+        <div class="stat">
+            <span class="label">FPS:</span>
+            <span class="value" id="fps">0</span>
+        </div>
+    </div>
+
+    <div id="controls">
+        <strong>🎮 Controls</strong>
+        <div>• Mouse drag: Rotate camera</div>
+        <div>• Mouse wheel: Zoom in/out</div>
+        <div>• Right-click drag: Pan view</div>
+    </div>
+
+    <div id="control-panel">
+        <h3>⚙️ Simulation</h3>
+
+        <div class="control-group">
+            <label>Universe Size</label>
+            <select id="universeSize">
+                <option value="10">10×10×10 (Small)</option>
+                <option value="15">15×15×15 (Medium)</option>
+                <option value="20">20×20×20 (Large)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Pattern</label>
+            <select id="pattern">
+                <option value="glider">Glider (Bays's)</option>
+                <option value="block">Block 3D</option>
+                <option value="beehive">Beehive 3D</option>
+                <option value="blinker">Blinker (P2)</option>
+                <option value="flashlight">Flashlight (P4)</option>
+                <option value="wheel">Wheel (P2)</option>
+                <option value="bucket">Bucket</option>
+            </select>
+        </div>
+
+        <div class="button-group">
+            <button onclick="app.initUniverse()">Initialize</button>
+            <button onclick="app.loadPattern()">Load Pattern</button>
+            <button onclick="app.step()" class="secondary">Step</button>
+            <button onclick="app.toggleAnimation()" id="animateBtn">Start</button>
+            <button onclick="app.clearUniverse()" class="secondary full-width">Clear</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="wasm_exec.js"></script>
+    <script src="golife-wasm.js"></script>
+    <script src="wasm-3d-viewer.js"></script>
+</body>
+</html>
