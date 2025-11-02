@@ -16,7 +16,7 @@ BINARY_WINDOWS=$(BINARY_NAME).exe
 # Build directory
 BUILD_DIR=bin
 
-.PHONY: all build clean test coverage run run-auto run-pattern demo demo-multi demo-25d demo-3d web-viewer build-wasm wasm-test wasm-api-test help fmt vet quality deps tidy
+.PHONY: all build clean test coverage run run-auto run-pattern demo demo-multi demo-25d demo-3d web-viewer build-wasm wasm-test wasm-api-test wasm-3d-viewer help fmt vet quality deps tidy
 
 # Default target
 all: help
@@ -47,6 +47,7 @@ help:
 	@echo "  make build-wasm   - Build WASM binary"
 	@echo "  make wasm-test    - Run basic WASM test server (http://localhost:8081)"
 	@echo "  make wasm-api-test- Run WASM API test server (http://localhost:8082)"
+	@echo "  make wasm-3d-viewer- Run WASM 3D viewer (http://localhost:8083)"
 
 ## build: Build the binary
 build:
@@ -228,3 +229,30 @@ wasm-api-test: build-wasm
 	@echo "=========================================="
 	@echo ""
 	@cd web && python3 -m http.server 8082
+
+## wasm-3d-viewer: Run WASM 3D viewer
+wasm-3d-viewer: build-wasm
+	@echo "=========================================="
+	@echo "  WASM 3D Viewer (Three.js)"
+	@echo "=========================================="
+	@echo ""
+	@echo "Starting HTTP server on :8083"
+	@echo "  URL: http://localhost:8083/wasm-3d-viewer.html"
+	@echo ""
+	@echo "Features:"
+	@echo "  - Three.js 3D visualization"
+	@echo "  - 10×10×10 default universe"
+	@echo "  - Scalable to 15×15×15, 20×20×20"
+	@echo "  - 7 pattern presets (Glider, Block, etc.)"
+	@echo "  - Real-time animation"
+	@echo "  - Interactive camera controls"
+	@echo ""
+	@echo "Controls:"
+	@echo "  - Mouse drag: Rotate camera"
+	@echo "  - Mouse wheel: Zoom in/out"
+	@echo "  - Right-click drag: Pan view"
+	@echo ""
+	@echo "Press Ctrl+C to stop"
+	@echo "=========================================="
+	@echo ""
+	@cd web && python3 -m http.server 8083
